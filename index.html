@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zyra - Tienda de Ropa</title>
+    <link rel="stylesheet" href="estilos.css?v=1">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-logo">
+            <a href="pagina.html"><img src="img/log_Mesa de trabajo 1.png" alt="Zyra Logo" height="40"></a>
+        </div>
+        <div class="navbar-search">
+            <input id="siteSearchInput" type="text" placeholder="¿Buscas algún producto...?">
+            <button id="siteSearchBtn">🔍</button>
+            <div id="siteSearchMsg" style="color:var(--muted);font-size:0.9rem;margin-left:12px;display:none"></div>
+        </div>
+        <ul class="navbar-links">
+            <li class="dropdown">
+                <a href="#categorias" id="categorias-btn">Categorías ▼</a>
+                <ul class="dropdown-menu" id="categorias-menu">
+                    <li><a href="categorias/vestidos.html">Vestidos</a></li>
+                    <li><a href="categorias/camisas.html">Camisas</a></li>
+                    <li><a href="categorias/pantalones.html">Pantalones</a></li>
+                    <li><a href="categorias/pans.html">Pans</a></li>
+                    <li><a href="categorias/faldas.html">Faldas</a></li>
+                </ul>
+            </li>
+            <li>
+                <a href="zyra.html" id="asistente-btn">Asistente</a>
+            </li>
+        </ul>
+        <div class="navbar-user">
+            <a href="registro.html">Regístrate</a>
+            <a href="#carrito">🛒</a>
+        </div>
+    </nav>
+
+    <main>
+        <section class="banner">
+            <img src="img/z.jpg" alt="Banner Zyra" class="banner-img">
+            <div class="banner-texto">
+                <h1>¡Bienvenido a Zyra!</h1>
+                <p>Ropa que inspira, tecnología que entiende.</p>
+                <a href="#nuevos" class="banner-btn">Ver estilos</a>
+            </div>
+        </section>
+        <section id="asistente-section" style="display:none; margin:2rem 0;">
+            <iframe src="/zyra.html" style="width:100%;height:850px;border:none;border-radius:10px;overflow:hidden"></iframe>
+        </section>
+
+        <section class="productos" id="nuevos">
+            <div class="producto" data-colors="rojo">
+                <img src="img/vestidorojoo.jpg" alt="Vestido Rojo">
+                <h3>Vestido Rojo</h3>
+                <p>Vestido elegante para ocasiones especiales.</p>
+                <span class="precio">$39.99</span>
+            </div>
+            <div class="producto" data-colors="blanco">
+                <img src="img/camisablanca.jpg" alt="Camisa Blanca">
+                <h3>Camisa Blanca</h3>
+                <p>Camisa clásica de algodón, ideal para el día a día.</p>
+                <span class="precio">$24.99</span>
+            </div>
+            <div class="producto" data-colors="negro">
+                <img src="img/pantalonnegro.jpg" alt="Pantalón Negro">
+                <h3>Pantalón Negro</h3>
+                <p>Pantalón formal, perfecto para la oficina.</p>
+                <span class="precio">$29.99</span>
+            </div>
+        </section>
+    </main>
+
+    
+    <section id="ubicacion">    
+        <div class="ubicacion-contenido">
+            <div>
+                <h2>¿Dónde nos pueden encontrar?</h2>
+                <p>Visítanos en nuestra tienda física en esta dirección que te mostramos en pantalla.</p>
+                <p style="color:var(--muted);font-size:0.95rem;margin-top:0.5rem;"> Direccion: <strong>El Salvador, San Salvador, Boulevard Venezuela, Instituto Nacional Tecnico Industrial</strong></p>
+            </div>
+            <div class="map-container">
+                <iframe
+                    src="https://www.google.com/maps?q=El+Salvador,+San+Salvador,+Boulevard+Venezuela,+Instituto+Nacional+Tecnico+Industrial&output=embed"
+                    allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        &copy; 2025 Zyra. Todos los derechos reservados.
+    </footer>
+
+    
+
+        <script>
+        /*
+            pagina.html - Script principal (buscador y navegación)
+
+            Comentarios en español:
+            - normalizeString(s): normaliza cadenas Unicode (quita tildes/diacríticos)
+                y las deja en minúsculas para búsquedas robustas. Usarla siempre que se
+                comparen textos ingresados por el usuario con datos almacenados.
+
+            - products (array): catálogo global usado tanto por la página principal
+                como por el asistente. Mantener una copia única aquí ayuda a que la
+                búsqueda funcione igual en ambas interfaces.
+
+            - searchProductsGlobal(query): realiza una búsqueda directa en el array
+                de productos (nombre, categoría, descripción y colores). Devuelve una
+                lista de coincidencias exactas por substring normalizado.
+
+            - renderProductMatches(matches): renderiza los resultados como elementos
+                `.producto` compatibles con `modal.js` y con el atributo
+                `data-colors` para permitir búsquedas por color.
+
+            - originalProductsHTML: guardamos el HTML original de la sección
+                `.productos` para restaurarlo cuando el usuario borre el texto de
+                búsqueda (comportamiento: volver al estado inicial de la página).
+
+            - runSearch(): flujo de búsqueda con estas etapas:
+                    1) Si la consulta coincide con una categoría, redirige a la página
+                         de categoría (mejor UX para consultas tipo "vestidos").
+                    2) Intentar búsqueda global contra `products` (nombre/desc/categoría/colores).
+                    3) Si no hay coincidencias, usar un fallback que tokeniza la consulta
+                         y puntúa los elementos `.producto` que ya existen en el DOM.
+                    4) Mostrar mensajes de estado mediante `showSearchMessage()`.
+
+            Nota: Para evitar problemas con rutas al abrir archivos vía file:// se
+            recomienda servir el proyecto con un servidor local (p.ej. Live Server).
+        */
+        document.addEventListener('DOMContentLoaded', function() {
+                console.log('🚀 Iniciando Zyra Assistant...');
+
+        const categoriasBtn = document.getElementById('categorias-btn');
+        const categoriasMenu = document.getElementById('categorias-menu');
+
+        if (categoriasBtn && categoriasMenu) {
+            categoriasBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                categoriasMenu.classList.toggle('show');
+            });
+
+            // Cierra el menú si se hace clic fuera
+            document.addEventListener('click', function(e) {
+                if (!categoriasBtn.contains(e.target) && !categoriasMenu.contains(e.target)) {
+                    categoriasMenu.classList.remove('show');
+                }
+            });
+        }
+
+        
+        const asistenteBtn = document.getElementById('asistente-btn');
+        if (asistenteBtn) {
+            asistenteBtn.addEventListener('click', function(e) {
+                // Close categories menu if open (visual cleanup)
+                if (categoriasMenu) categoriasMenu.classList.remove('show');
+                // Navegar a la página del asistente
+                window.location.href = 'zyra.html';
+            });
+        }
+        
+        function normalizeString(s){
+            if(!s && s !== 0) return '';
+            try{ return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); }catch(e){ return String(s).toLowerCase(); }
+        }
+
+        const categoryMap = {
+            'vestidos':'categorias/vestidos.html',
+            'camisas':'categorias/camisas.html',
+            'pantalones':'categorias/pantalones.html',
+            'pans':'categorias/pans.html',
+            'faldas':'categorias/faldas.html'
+        };
+
+        // Global products catalog (same data used by the assistant) so homepage search
+        // can behave identically and find by product name and colors.
+        const products = [
+            { id:1, name:"Vestido Rojo", category:"Vestidos", price:39.99, stock:10, description:"Vestido elegante para ocasiones especiales.", colors:["Rojo"], image:"vestidos/vestidorojo.png" },
+            { id:2, name:"Vestido Negro", category:"Vestidos", price:43.99, stock:12, description:"Vestido clásico, ideal para eventos formales.", colors:["Negro"], image:"vestidos/vestidonegro.png" },
+            { id:3, name:"Vestido Azul", category:"Vestidos", price:34.99, stock:8, description:"Vestido moderno en tono azul, ideal para fiestas.", colors:["Azul"], image:"vestidos/vestidoazul.png" },
+            { id:4, name:"Vestido Blanco", category:"Vestidos", price:33.99, stock:9, description:"Vestido fresco y juvenil, perfecto para el verano.", colors:["Blanco"], image:"vestidos/vestidoblanco.png" },
+            { id:5, name:"Vestido Rosa", category:"Vestidos", price:37.99, stock:7, description:"Vestido romántico, ideal para citas y eventos especiales.", colors:["Rosa"], image:"vestidos/vestidorosa.png" },
+            { id:6, name:"Vestido Verde", category:"Vestidos", price:35.99, stock:6, description:"Vestido fresco y natural, perfecto para primavera.", colors:["Verde"], image:"vestidos/vestidoverde.png" },
+            { id:7, name:"Vestido Amarillo", category:"Vestidos", price:33.99, stock:5, description:"Vestido alegre y vibrante, ideal para días soleados.", colors:["Amarillo"], image:"vestidos/vestidoamarillo.png" },
+            { id:8, name:"Vestido Lila", category:"Vestidos", price:38.99, stock:4, description:"Vestido delicado y elegante, para ocasiones especiales.", colors:["Lila"], image:"vestidos/vestidolila.png" },
+            { id:9, name:"Camisa Blanca", category:"Camisas", price:24.99, stock:15, description:"Camisa clásica de algodón, ideal para el día a día.", colors:["Blanco"], image:"camisass/camisablanca.png" },
+            { id:10, name:"Camisa Negra", category:"Camisas", price:28.99, stock:14, description:"Camisa elegante y versátil.", colors:["Negro"], image:"camisass/camisanegra.png" },
+            { id:11, name:"Camisa Azul", category:"Camisas", price:24.99, stock:12, description:"Camisa informal, perfecta para salir.", colors:["Azul"], image:"camisass/camisaazul.png" },
+            { id:12, name:"Camisa Roja", category:"Camisas", price:26.99, stock:11, description:"Camisa con corte moderno y color llamativo.", colors:["Rojo"], image:"camisass/camisaroja.png" },
+            { id:13, name:"Camisa Verde", category:"Camisas", price:24.99, stock:10, description:"Camisa fresca para la temporada de primavera.", colors:["Verde"], image:"camisass/camisaverde.png" },
+            { id:14, name:"Camisa Amarilla", category:"Camisas", price:25.99, stock:9, description:"Camisa suave y juvenil.", colors:["Amarillo"], image:"camisass/camisaamarilla.png" },
+            { id:15, name:"Camisa Gris", category:"Camisas", price:29.99, stock:8, description:"Camisa color gris, estilo clásico.", colors:["Gris"], image:"camisass/camisagris.png" },
+            { id:16, name:"Camisa Estampada", category:"Camisas", price:29.99, stock:6, description:"Camisa con diseño único para un look diferente.", colors:["Multicolor"], image:"camisass/estampada.png" },
+            { id:17, name:"Pantalón Negro", category:"Pantalones", price:29.99, stock:12, description:"Pantalón formal, perfecto para la oficina.", colors:["Negro"], image:"pantalones/negro.png" },
+            { id:18, name:"Pantalón Gris", category:"Pantalones", price:27.99, stock:11, description:"Pantalón casual, ideal para el día a día.", colors:["Gris"], image:"pantalones/gris.png" },
+            { id:19, name:"Pantalón Azul", category:"Pantalones", price:34.99, stock:10, description:"Pantalón moderno en tono azul, ideal para fiestas.", colors:["Azul"], image:"pantalones/azul.png" },
+            { id:20, name:"Pantalón Beige", category:"Pantalones", price:32.99, stock:9, description:"Pantalón fresco y juvenil, perfecto para el verano.", colors:["Beige"], image:"pantalones/beige.png" },
+            { id:21, name:"Pantalón Celeste", category:"Pantalones", price:33.99, stock:8, description:"Pantalón fresco y natural, perfecto para primavera.", colors:["Celeste"], image:"pantalones/celeste.png" },
+            { id:22, name:"Pantalón Verde", category:"Pantalones", price:31.99, stock:7, description:"Pantalón alegre y vibrante, ideal para días soleados.", colors:["Verde"], image:"pantalones/verde.png" },
+            { id:23, name:"Pantalón Azul Marino", category:"Pantalones", price:37.99, stock:6, description:"Pantalón delicado y elegante, para ocasiones especiales.", colors:["Marino"], image:"pantalones/marino.png" },
+            { id:24, name:"Pantalón Blanco", category:"Pantalones", price:24.99, stock:5, description:"Pantalón clásico de algodón, ideal para el día a día.", colors:["Blanco"], image:"pantalones/blanco.png" },
+            { id:25, name:"Pans Rojo", category:"Pans", price:19.99, stock:14, description:"Pans deportivo, cómodo para entrenar.", colors:["Rojo"], image:"pans/rojo.png" },
+            { id:26, name:"Pans Negro", category:"Pans", price:21.99, stock:13, description:"Pans clásico, ideal para cualquier ocasión.", colors:["Negro"], image:"pans/negro.png" },
+            { id:27, name:"Pans Azul", category:"Pans", price:19.99, stock:12, description:"Pans moderno en tono azul.", colors:["Azul"], image:"pans/azul.png" },
+            { id:28, name:"Pans Blanco", category:"Pans", price:20.99, stock:11, description:"Pans fresco y juvenil.", colors:["Blanco"], image:"pans/blanco.png" },
+            { id:29, name:"Pans Rosa", category:"Pans", price:21.99, stock:10, description:"Pans cómodo y moderno.", colors:["Rosa"], image:"pans/rosa.png" },
+            { id:30, name:"Pans Verde", category:"Pans", price:22.99, stock:9, description:"Pans natural, ideal para primavera.", colors:["Verde"], image:"pans/verde.png" },
+            { id:31, name:"Pans Gris", category:"Pans", price:18.99, stock:8, description:"Pans alegre y vibrante.", colors:["Gris"], image:"pans/gris.png" },
+            { id:32, name:"Pans Naranja", category:"Pans", price:23.99, stock:7, description:"Pans delicado y elegante.", colors:["Naranja"], image:"pans/naranja.png" },
+            { id:33, name:"Falda Roja", category:"Faldas", price:29.99, stock:12, description:"Falda elegante para ocasiones especiales.", colors:["Rojo"], image:"faldas/rojo.png" },
+            { id:34, name:"Falda Negra", category:"Faldas", price:31.99, stock:11, description:"Falda clásica, ideal para cualquier evento.", colors:["Negro"], image:"faldas/negra.png" },
+            { id:35, name:"Falda Azul", category:"Faldas", price:26.99, stock:10, description:"Falda moderna en tono azul.", colors:["Azul"], image:"faldas/azul.png" },
+            { id:36, name:"Falda Naranja", category:"Faldas", price:27.99, stock:9, description:"Falda fresca y juvenil.", colors:["Naranja"], image:"faldas/naranja.png" },
+            { id:37, name:"Falda Rosa", category:"Faldas", price:29.99, stock:8, description:"Falda cómoda y moderna.", colors:["Rosa"], image:"faldas/rosa.png" },
+            { id:38, name:"Falda Verde", category:"Faldas", price:31.99, stock:7, description:"Falda natural, ideal para primavera.", colors:["Verde"], image:"faldas/verde.png" },
+            { id:39, name:"Falda Amarilla", category:"Faldas", price:24.99, stock:6, description:"Falda alegre y vibrante.", colors:["Amarillo"], image:"faldas/amarillo.png" },
+            { id:40, name:"Falda Lila", category:"Faldas", price:32.99, stock:5, description:"Falda delicada y elegante.", colors:["Lila"], image:"faldas/lila.png" }
+        ];
+
+        function searchProductsGlobal(query){
+            if(!query) return [];
+            const nq = normalizeString(query);
+            return products.filter(p => {
+                const name = normalizeString(p.name || '');
+                const cat = normalizeString(p.category || '');
+                const desc = normalizeString(p.description || '');
+                const cols = normalizeString((p.colors || []).join(' '));
+                return name.indexOf(nq) !== -1 || cat.indexOf(nq) !== -1 || desc.indexOf(nq) !== -1 || cols.indexOf(nq) !== -1;
+            });
+        }
+
+        function renderProductMatches(matches){
+            if(!productsGrid) return;
+            // Clear current grid and render matches as .producto elements so modal.js works
+            productsGrid.innerHTML = '';
+            matches.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'producto';
+                div.setAttribute('data-colors', (p.colors || []).map(c=>normalizeString(c)).join(' '));
+                div.innerHTML = `
+                    <img src="${p.image}" alt="${p.name}">
+                    <h3>${p.name}</h3>
+                    <p>${p.description}</p>
+                    <span class="precio">$${p.price.toFixed(2)}</span>
+                `;
+                productsGrid.appendChild(div);
+            });
+        }
+
+    const searchInput = document.getElementById('siteSearchInput');
+    const searchBtn = document.getElementById('siteSearchBtn');
+    const searchMsg = document.getElementById('siteSearchMsg');
+    const productsGrid = document.querySelector('.productos');
+    // Save original HTML so we can restore the page when the search is cleared
+    const originalProductsHTML = productsGrid ? productsGrid.innerHTML : '';
+
+        function showSearchMessage(t){ if(!searchMsg) return; if(!t){ searchMsg.style.display='none'; searchMsg.textContent=''; } else { searchMsg.style.display='block'; searchMsg.textContent = t; } }
+
+        function runSearch(){
+            if(!searchInput) return;
+            const rawQuery = searchInput.value.trim();
+            const q = normalizeString(rawQuery);
+            // If the query was cleared, restore the original page content
+            if(!q){
+                if(productsGrid) productsGrid.innerHTML = originalProductsHTML;
+                showSearchMessage('');
+                return;
+            }
+
+            // If query clearly targets a category, redirect there
+            for(const key of Object.keys(categoryMap)){
+                if(key === q || q.indexOf(key) !== -1 || key.indexOf(q) !== -1){
+                    window.location.href = categoryMap[key];
+                    return;
+                }
+            }
+
+            // First try global assistant-like search (search by name, description, category or colors)
+            const globalMatches = searchProductsGlobal(rawQuery);
+            if(globalMatches && globalMatches.length > 0){
+                renderProductMatches(globalMatches);
+                showSearchMessage(globalMatches.length + ' producto(s) encontrados');
+                return;
+            }
+
+            // Fallback: try tokenized local DOM scoring (keeps previous behavior for local-only pages)
+            if(!productsGrid){ showSearchMessage('No hay productos en esta página para filtrar.'); return; }
+            const items = Array.from(productsGrid.querySelectorAll('.producto'));
+            const tokens = q.split(/\s+/).filter(Boolean);
+            const scored = items.map(item => {
+                const titleRaw = (item.querySelector('h3') && item.querySelector('h3').textContent) || '';
+                const descRaw = (item.querySelector('p') && item.querySelector('p').textContent) || '';
+                const img = item.querySelector('img');
+                const altRaw = (img && img.alt) || '';
+                const srcRaw = (img && img.src) ? img.src.split('/').pop().replace(/\.[a-z]+$/i,'') : '';
+                const colorsRaw = item.dataset && item.dataset.colors ? item.dataset.colors : '';
+                const searchable = normalizeString([titleRaw, descRaw, altRaw, srcRaw, colorsRaw].join(' '));
+                let score = 0; tokens.forEach(t => { if(searchable.indexOf(t) !== -1) score++; });
+                return { item, score };
+            });
+            const positive = scored.filter(s => s.score > 0).sort((a,b) => b.score - a.score);
+            let found = positive.length;
+            items.forEach(it => it.style.display = 'none');
+            positive.forEach(s => { s.item.style.display = ''; productsGrid.appendChild(s.item); });
+            if(found === 0) showSearchMessage('No se encontraron productos para "' + rawQuery + '"');
+            else showSearchMessage(found + ' producto(s) encontrados — ordenados por relevancia');
+        }
+
+        if(searchBtn) searchBtn.addEventListener('click', function(e){ e.preventDefault(); runSearch(); });
+        if(searchInput) searchInput.addEventListener('keypress', function(e){ if(e.key === 'Enter'){ e.preventDefault(); runSearch(); } });
+
+    });
+    </script>
+    <script src="modal.js"></script>
+    <script src="cart.js"></script>
+</body>
+</html>
