@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Zyra - Asistente de Cliente</title>
+  <link rel="stylesheet" href="estilos.css">
+  <style>
+  :root{
+      --primary: var(--gold);
+      --secondary: var(--panel);
+      --light: var(--bg);
+      --text: var(--white);
+      --border: rgba(255,255,255,0.06);
+      --card-bg: var(--card-bg);
+      --text-light: var(--muted);
+    }
+    *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,Segoe UI,Arial,sans-serif}
+    body{background:var(--bg);min-height:100vh;padding:20px;color:var(--white)}
+    .app-container{display:flex;max-width:1400px;margin:0 auto;background:var(--panel);border-radius:12px;overflow:hidden;height:94vh;box-shadow:0 10px 30px rgba(0,0,0,.24)}
+  .side-panel{width:300px;padding:28px;background:#0b0b0b;color:#ffffff;display:flex;flex-direction:column;box-shadow:none}
+  .logo h1, .logo h2{color:#ffffff}
+  .nav-button{background:transparent;color:#ffffff;border:1px solid rgba(255,255,255,0.04)}
+  .nav-button.active{background:#222;padding-left:18px}
+    .logo h1{font-size:30px;margin-bottom:6px} .logo h2{font-size:14px;opacity:.9}
+    .nav-buttons{margin-top:30px;display:flex;flex-direction:column;gap:12px}
+    .nav-button{background:rgba(255,255,255,.06);border:none;border-radius:12px;padding:14px 18px;color:white;text-align:left;cursor:pointer;display:flex;align-items:center;gap:10px;font-weight:600}
+    .nav-button.active{background:rgba(255,255,255,.14)}
+    .company-info{margin-top:auto;background:rgba(255,255,255,.06);padding:16px;border-radius:10px;font-size:13px}
+    .main-content{flex:1;display:flex;flex-direction:column;background:var(--light)}
+    .main-header{display:flex;justify-content:space-between;align-items:center;padding:20px 28px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#0a0a0a,#f8f8f8)}
+    .header-title{font-size:20px;font-weight:700;color:var(--text)}
+    .header-actions{display:flex;gap:10px;align-items:center}
+    .header-btn{background:var(--primary);color:#ffffff;border:none;padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:700}
+    .tab-container{flex:1;display:flex;overflow:hidden}
+    .tab-content{flex:1;padding:24px;display:none;overflow:auto}
+    .tab-content.active{display:block}
+    
+    .assistant-container{
+      background: #ffffff; /* white card */
+      color: #0a0a0a; /* dark text */
+      border-radius:12px;
+      box-shadow:0 8px 30px rgba(0,0,0,0.2);
+      height:100%;display:flex;flex-direction:column;overflow:hidden;
+    }
+    .assistant-header{
+      padding:18px;border-bottom:1px solid rgba(0,0,0,0.08);
+      background: #000000; /* black header */
+      color: #ffffff;border-top-left-radius:12px;border-top-right-radius:12px;
+    }
+    .assistant-title{font-size:20px;font-weight:800}
+  .chat-area{flex:1;padding:20px;overflow:auto;background:#ffffff;display:flex;flex-direction:column;gap:16px}
+    .message{max-width:82%;padding:14px;border-radius:14px;line-height:1.4;font-size:15px;position:relative;color:#0a0a0a}
+    /* bot messages: very light gray for slight separation */
+    .bot-message{background:#f7f7f7;color:#0a0a0a;align-self:flex-start;border-left:4px solid #000000;box-shadow:0 4px 12px rgba(0,0,0,0.04)}
+    /* user messages: black bubble with white text */
+    .user-message{background:#000000;color:#ffffff;align-self:flex-end}
+    .message-time{font-size:12px;color:#666666;display:block;text-align:right;margin-top:8px}
+    .user-message .message-time{color:rgba(255,255,255,0.85)}
+    .chat-input-area{display:flex;gap:12px;padding:16px;border-top:1px solid rgba(0,0,0,0.06);background:#ffffff}
+    .message-input{flex:1;padding:12px 14px;border-radius:999px;border:1px solid rgba(0,0,0,0.12);outline:none;color:#0a0a0a;background:#fff}
+    .send-button{width:56px;height:56px;border-radius:50%;border:none;background:#000000;color:#fff;font-size:20px;cursor:pointer}
+  .quick-options{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+  
+  .quick-option{background:#ffffff;border:1px solid #dcdcdc;padding:8px 12px;border-radius:999px;cursor:pointer;color:#0a0a0a;font-weight:600}
+  .quick-option:hover{box-shadow:0 6px 18px rgba(0,0,0,0.06);transform:translateY(-2px)}
+  
+  .chat-products-wrapper{
+    max-height:220px;
+    overflow-y:auto;
+    overflow-x:hidden;
+    transition:max-height 0.35s ease;
+    border-radius:12px;
+    padding-right:8px; /* space for scrollbar */
+    background:transparent;
+  }
+  /* When expanded, allow a larger visible area but still keep scroll if needed */
+  .chat-products-wrapper.expanded{max-height:520px}
+  .chat-products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;padding:8px}
+  
+  .chat-products-wrapper::-webkit-scrollbar{width:10px}
+  .chat-products-wrapper::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.12);border-radius:6px}
+  .chat-products-wrapper::-webkit-scrollbar-track{background:transparent}
+  .chat-products-toggle{display:inline-block;margin:10px auto 0 auto;padding:8px 12px;border-radius:10px;border:1px solid #dcdcdc;background:#fff;cursor:pointer;font-weight:700}
+    /* products */
+    .products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px}
+    .product-card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 6px 18px rgba(0,0,0,.05);cursor:pointer;border:1px solid var(--border)}
+    .product-image{height:130px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#ffffff,#ffffff);color:#fff;font-weight:700;padding:8px;text-align:center}
+    .product-info{padding:12px}
+    .product-name{font-weight:700;margin-bottom:6px}
+    .product-price{color:var(--primary);font-weight:800}
+    /* survey */
+    .survey-container{background:#fff;padding:18px;border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,.04)}
+    .rating-star{font-size:28px;cursor:pointer;color:#ddd}
+    .rating-star.active{color:#FFD700;transform:scale(1.15)}
+    /* responsive */
+    @media(max-width:900px){.side-panel{display:none}.app-container{height:auto;flex-direction:column}}
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <aside class="side-panel">
+      <div class="logo">
+        <h1>ZYRA</h1>
+        <h2>Asistente de Moda</h2>
+      </div>
+
+      <div class="nav-buttons" id="navButtons">
+        <button class="nav-button active" data-tab="assistant">💬 Asistente</button>
+        <button class="nav-button" data-tab="products">🛍️ Catálogo</button>
+        <button class="nav-button" data-tab="survey">⭐ Encuesta</button>
+      </div>
+
+      <div class="company-info">
+        <strong>Zyra Oficial</strong>
+        <p style="margin-top:6px;font-size:13px">Sistema Integral de Moda</p>
+        <p style="margin-top:8px;font-size:13px">📞 +503 75757575</p>
+        <p style="font-size:13px">✉️ info@zyra.com</p>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="main-header">
+        <div class="header-title" id="mainTitle">💬 Asistente</div>
+        <div class="header-actions"></div>
+      </header>
+
+      <div class="tab-container">
+        <!-- ASSISTANT -->
+        <section class="tab-content active" id="assistant-tab">
+          <div class="assistant-container">
+            <div class="assistant-header">
+              <div class="assistant-title">ZYRA - Tu Asistente de Cliente</div>
+              <div style="font-size:13px;opacity:.95">Puedo mostrar productos, responder dudas y hablar contigo.</div>
+            </div>
+
+            <div class="chat-area" id="chatArea">
+              <div class="message bot-message" id="welcomeMessage">
+                ¡Hola! Soy ZYRA, tu asistente personal de moda. ¿En qué puedo ayudarte hoy? Puedo mostrarte nuestros productos, contarte sobre ofertas o decirte la disponibilidad.
+                <span class="message-time" id="welcomeTime"></span>
+              </div>
+            </div>
+
+            <div class="chat-input-area">
+              <input id="messageInput" class="message-input" placeholder="Escribe tu mensaje..." autocomplete="off" />
+              <button id="sendButton" class="send-button">➤</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- PRODUCTS -->
+        <section class="tab-content" id="products-tab">
+          <div class="assistant-container">
+            <div class="assistant-header">
+              <div class="assistant-title">Catálogo</div>
+              <div style="font-size:13px;opacity:.95">Explora nuestros productos</div>
+            </div>
+
+            <div style="padding:18px">
+              <div class="products-grid" id="catalogProductsGrid"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SURVEY -->
+        <section class="tab-content" id="survey-tab">
+          <div class="assistant-container">
+            <div class="assistant-header">
+              <div class="assistant-title">Encuesta</div>
+              <div style="font-size:13px;opacity:.95">Tu opinión nos ayuda a mejorar</div>
+            </div>
+
+            <div style="padding:18px">
+              <div class="survey-container">
+                <h3 style="text-align:center;margin-bottom:12px">¿Cómo calificarías tu experiencia con ZYRA?</h3>
+                <div style="text-align:center;margin-bottom:14px">
+                  <span class="rating-star" data-rating="1">★</span>
+                  <span class="rating-star" data-rating="2">★</span>
+                  <span class="rating-star" data-rating="3">★</span>
+                  <span class="rating-star" data-rating="4">★</span>
+                  <span class="rating-star" data-rating="5">★</span>
+                </div>
+                <div style="text-align:center">
+                  <button class="header-btn" id="submitClientSurvey">Enviar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    /*
+      zyra.html - Asistente de Cliente (script)
+
+      Explicación rápida (en español):
+      - `products`: array maestro con todos los productos. Cada elemento tiene
+        {id, name, category, price, stock, description, colors, image}.
+        Este array es la fuente de verdad local para mostrar catálogo y para
+        búsquedas rápidas en el asistente.
+
+      - loadProductsCatalog(items): renderiza la cuadrícula del catálogo. Si
+        no se pasan `items`, muestra una vista resumida (una muestra por
+        categoría). Cuando se pasan `items` (p. ej. resultados de búsqueda),
+        muestra los productos concretos.
+
+      - searchProducts(query): búsqueda local simple (case-insensitive) que
+        revisa nombre, categoría, descripción y colores.
+
+      - showSearchResults(query): usa `searchProducts` y luego invoca
+        `loadProductsCatalog(matches)` y cambia a la pestaña de catálogo.
+
+      - showProductsQuickInChat(): genera una vista compacta y colapsable con
+        una muestra de productos dentro del chat (para evitar cortar tarjetas
+        se usa un contenedor con scroll y un botón "Ver más" que expande).
+
+      - En general: comento las funciones principales y mantengo la lógica
+        intacta; estos comentarios sirven para entender qué hace cada bloque.
+    */
+    
+    let products = [
+      // Vestidos (8)
+      { id:1, name:"Vestido Rojo", category:"Vestidos", price:39.99, stock:10, description:"Vestido elegante para ocasiones especiales.", colors:["Rojo"], image:"vestidos/vestidorojo.png" },
+      { id:2, name:"Vestido Negro", category:"Vestidos", price:43.99, stock:12, description:"Vestido clásico, ideal para eventos formales.", colors:["Negro"], image:"vestidos/vestidonegro.png" },
+      { id:3, name:"Vestido Azul", category:"Vestidos", price:34.99, stock:8, description:"Vestido moderno en tono azul, ideal para fiestas.", colors:["Azul"], image:"vestidos/vestidoazul.png" },
+      { id:4, name:"Vestido Blanco", category:"Vestidos", price:33.99, stock:9, description:"Vestido fresco y juvenil, perfecto para el verano.", colors:["Blanco"], image:"vestidos/vestidoblanco.png" },
+      { id:5, name:"Vestido Rosa", category:"Vestidos", price:37.99, stock:7, description:"Vestido romántico, ideal para citas y eventos especiales.", colors:["Rosa"], image:"vestidos/vestidorosa.png" },
+      { id:6, name:"Vestido Verde", category:"Vestidos", price:35.99, stock:6, description:"Vestido fresco y natural, perfecto para primavera.", colors:["Verde"], image:"vestidos/vestidoverde.png" },
+      { id:7, name:"Vestido Amarillo", category:"Vestidos", price:33.99, stock:5, description:"Vestido alegre y vibrante, ideal para días soleados.", colors:["Amarillo"], image:"vestidos/vestidoamarillo.png" },
+      { id:8, name:"Vestido Lila", category:"Vestidos", price:38.99, stock:4, description:"Vestido delicado y elegante, para ocasiones especiales.", colors:["Lila"], image:"vestidos/vestidolila.png" },
+
+      // Camisas (8)
+      { id:9, name:"Camisa Blanca", category:"Camisas", price:24.99, stock:15, description:"Camisa clásica de algodón, ideal para el día a día.", colors:["Blanco"], image:"camisass/camisablanca.png" },
+      { id:10, name:"Camisa Negra", category:"Camisas", price:28.99, stock:14, description:"Camisa elegante y versátil.", colors:["Negro"], image:"camisass/camisanegra.png" },
+      { id:11, name:"Camisa Azul", category:"Camisas", price:24.99, stock:12, description:"Camisa informal, perfecta para salir.", colors:["Azul"], image:"camisass/camisaazul.png" },
+      { id:12, name:"Camisa Roja", category:"Camisas", price:26.99, stock:11, description:"Camisa con corte moderno y color llamativo.", colors:["Rojo"], image:"camisass/camisaroja.png" },
+      { id:13, name:"Camisa Verde", category:"Camisas", price:24.99, stock:10, description:"Camisa fresca para la temporada de primavera.", colors:["Verde"], image:"camisass/camisaverde.png" },
+      { id:14, name:"Camisa Amarilla", category:"Camisas", price:25.99, stock:9, description:"Camisa suave y juvenil.", colors:["Amarillo"], image:"camisass/camisaamarilla.png" },
+      { id:15, name:"Camisa Gris", category:"Camisas", price:29.99, stock:8, description:"Camisa color gris, estilo clásico.", colors:["Gris"], image:"camisass/camisagris.png" },
+      { id:16, name:"Camisa Estampada", category:"Camisas", price:29.99, stock:6, description:"Camisa con diseño único para un look diferente.", colors:["Multicolor"], image:"camisass/estampada.png" },
+
+      // Pantalones (8)
+      { id:17, name:"Pantalón Negro", category:"Pantalones", price:29.99, stock:12, description:"Pantalón formal, perfecto para la oficina.", colors:["Negro"], image:"pantalones/negro.png" },
+      { id:18, name:"Pantalón Gris", category:"Pantalones", price:27.99, stock:11, description:"Pantalón casual, ideal para el día a día.", colors:["Gris"], image:"pantalones/gris.png" },
+      { id:19, name:"Pantalón Azul", category:"Pantalones", price:34.99, stock:10, description:"Pantalón moderno en tono azul, ideal para fiestas.", colors:["Azul"], image:"pantalones/azul.png" },
+      { id:20, name:"Pantalón Beige", category:"Pantalones", price:32.99, stock:9, description:"Pantalón fresco y juvenil, perfecto para el verano.", colors:["Beige"], image:"pantalones/beige.png" },
+      { id:21, name:"Pantalón Celeste", category:"Pantalones", price:33.99, stock:8, description:"Pantalón fresco y natural, perfecto para primavera.", colors:["Celeste"], image:"pantalones/celeste.png" },
+      { id:22, name:"Pantalón Verde", category:"Pantalones", price:31.99, stock:7, description:"Pantalón alegre y vibrante, ideal para días soleados.", colors:["Verde"], image:"pantalones/verde.png" },
+      { id:23, name:"Pantalón Azul Marino", category:"Pantalones", price:37.99, stock:6, description:"Pantalón delicado y elegante, para ocasiones especiales.", colors:["Marino"], image:"pantalones/marino.png" },
+      { id:24, name:"Pantalón Blanco", category:"Pantalones", price:24.99, stock:5, description:"Pantalón clásico de algodón, ideal para el día a día.", colors:["Blanco"], image:"pantalones/blanco.png" },
+
+      // Pans (8)
+      { id:25, name:"Pans Rojo", category:"Pans", price:19.99, stock:14, description:"Pans deportivo, cómodo para entrenar.", colors:["Rojo"], image:"pans/rojo.png" },
+      { id:26, name:"Pans Negro", category:"Pans", price:21.99, stock:13, description:"Pans clásico, ideal para cualquier ocasión.", colors:["Negro"], image:"pans/negro.png" },
+      { id:27, name:"Pans Azul", category:"Pans", price:19.99, stock:12, description:"Pans moderno en tono azul.", colors:["Azul"], image:"pans/azul.png" },
+      { id:28, name:"Pans Blanco", category:"Pans", price:20.99, stock:11, description:"Pans fresco y juvenil.", colors:["Blanco"], image:"pans/blanco.png" },
+      { id:29, name:"Pans Rosa", category:"Pans", price:21.99, stock:10, description:"Pans cómodo y moderno.", colors:["Rosa"], image:"pans/rosa.png" },
+      { id:30, name:"Pans Verde", category:"Pans", price:22.99, stock:9, description:"Pans natural, ideal para primavera.", colors:["Verde"], image:"pans/verde.png" },
+      { id:31, name:"Pans Gris", category:"Pans", price:18.99, stock:8, description:"Pans alegre y vibrante.", colors:["Gris"], image:"pans/gris.png" },
+      { id:32, name:"Pans Naranja", category:"Pans", price:23.99, stock:7, description:"Pans delicado y elegante.", colors:["Naranja"], image:"pans/naranja.png" },
+
+      // Faldas (8)
+      { id:33, name:"Falda Roja", category:"Faldas", price:29.99, stock:12, description:"Falda elegante para ocasiones especiales.", colors:["Rojo"], image:"faldas/rojo.png" },
+      { id:34, name:"Falda Negra", category:"Faldas", price:31.99, stock:11, description:"Falda clásica, ideal para cualquier evento.", colors:["Negro"], image:"faldas/negra.png" },
+      { id:35, name:"Falda Azul", category:"Faldas", price:26.99, stock:10, description:"Falda moderna en tono azul.", colors:["Azul"], image:"faldas/azul.png" },
+      { id:36, name:"Falda Naranja", category:"Faldas", price:27.99, stock:9, description:"Falda fresca y juvenil.", colors:["Naranja"], image:"faldas/naranja.png" },
+      { id:37, name:"Falda Rosa", category:"Faldas", price:29.99, stock:8, description:"Falda cómoda y moderna.", colors:["Rosa"], image:"faldas/rosa.png" },
+      { id:38, name:"Falda Verde", category:"Faldas", price:31.99, stock:7, description:"Falda natural, ideal para primavera.", colors:["Verde"], image:"faldas/verde.png" },
+      { id:39, name:"Falda Amarilla", category:"Faldas", price:24.99, stock:6, description:"Falda alegre y vibrante.", colors:["Amarillo"], image:"faldas/amarillo.png" },
+      { id:40, name:"Falda Lila", category:"Faldas", price:32.99, stock:5, description:"Falda delicada y elegante.", colors:["Lila"], image:"faldas/lila.png" }
+    ];
+
+    
+    document.querySelectorAll('.nav-button').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        document.querySelectorAll('.nav-button').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        const tab = btn.getAttribute('data-tab');
+        showTab(tab);
+      });
+    });
+
+    function showTab(tabId){
+      document.querySelectorAll('.tab-content').forEach(tc=>tc.classList.remove('active'));
+      document.getElementById(tabId+'-tab').classList.add('active');
+      document.getElementById('mainTitle').textContent = (tabId === 'assistant' ? '💬 Asistente' : tabId === 'products' ? '🛍️ Catálogo' : '⭐ Encuesta');
+    }
+
+    
+    document.addEventListener('DOMContentLoaded', ()=>{
+      loadProductsCatalog();
+      document.getElementById('welcomeTime').textContent = getCurrentTime();
+      initializeChat();
+      initializeSurvey();
+      // activar pestaña asistente por defecto
+      showTab('assistant');
+    });
+
+    
+    
+    function loadProductsCatalog(items){
+      const grid = document.getElementById('catalogProductsGrid');
+      grid.innerHTML = '';
+
+      let list = items || products;
+
+      // When no items provided, collapse to one product per category
+      let isDefaultView = false;
+      if(!items){
+        isDefaultView = true;
+        const seen = new Set();
+        const unique = [];
+        for(const p of products){
+          const cat = p.category || 'Otros';
+          if(!seen.has(cat)){
+            seen.add(cat);
+            unique.push(p);
+          }
+        }
+        list = unique;
+      }
+
+      // mapping category -> category page (relative path)
+      const categoryPages = {
+        'Vestidos': 'categorias/vestidos.html',
+        'Camisas': 'categorias/camisas.html',
+        'Pantalones': 'categorias/pantalones.html',
+        'Pans': 'categorias/pans.html',
+        'Faldas': 'categorias/faldas.html'
+      };
+
+      list.forEach(p=>{
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        if(isDefaultView){
+          // Default catalog: show only category name and representative image
+          card.innerHTML = `
+            <div class="product-image"><img src="${p.image}" alt="${p.category}" style="width:100%;height:160px;object-fit:cover" onerror="this.style.background='linear-gradient(135deg,#7E57C2,#B388FF)';this.src='';this.alt='Imagen'"></div>
+            <div class="product-info">
+              <div class="product-name">${p.category}</div>
+            </div>
+          `;
+          card.addEventListener('click', ()=>{
+            // redirect to the category page if exists, otherwise try normalized filename
+            const target = categoryPages[p.category] || ('categorias/' + (typeof normalizeString === 'function' ? normalizeString(p.category) : p.category.toLowerCase()) + '.html');
+            window.location.href = target;
+          });
+        } else {
+          // items provided (search results): show product name + category
+          card.innerHTML = `
+            <div class="product-image"><img src="${p.image}" alt="${p.name}" style="width:100%;height:160px;object-fit:cover" onerror="this.style.background='linear-gradient(135deg,#7E57C2,#B388FF)';this.src='';this.alt='Imagen'"></div>
+            <div class="product-info">
+              <div class="product-name">${p.name}</div>
+              <div class="product-desc" style="font-size:13px;color:var(--text-light)">${p.category}</div>
+            </div>
+          `;
+          card.addEventListener('click', ()=>{
+            showProductDetails(p);
+          });
+        }
+        grid.appendChild(card);
+      });
+    }
+
+    
+    function searchProducts(query){
+      if(!query) return [];
+      const q = query.toLowerCase();
+      return products.filter(p => {
+        return (p.name && p.name.toLowerCase().includes(q)) ||
+               (p.category && p.category.toLowerCase().includes(q)) ||
+               (p.description && p.description.toLowerCase().includes(q)) ||
+               (p.colors && p.colors.join(' ').toLowerCase().includes(q));
+      });
+    }
+
+    
+    function showSearchResults(query){
+      const matches = searchProducts(query);
+      if(!matches || matches.length === 0){
+        appendBotMessage('No encontré productos que coincidan con "' + query + '".');
+        return;
+      }
+      loadProductsCatalog(matches);
+      showTab('products');
+      appendBotMessage('Mostrando ' + matches.length + ' producto(s) para "' + query + '".');
+    }
+
+    function showProductDetails(product){
+      appendBotMessage(`Producto: ${product.name}\nPrecio: $${product.price}\nDescripción: ${product.description}\nColores: ${product.colors.join(', ')}\nStock: ${product.stock}`);
+      // Enfocar pestaña de asistente
+      document.querySelector('[data-tab="assistant"]').click();
+    }
+
+    
+  const messageInput = document.getElementById('messageInput');
+  const sendButton = document.getElementById('sendButton');
+  if(sendButton) sendButton.addEventListener('click', sendMessage);
+  if(messageInput) messageInput.addEventListener('keypress', (e)=>{ if(e.key==='Enter') sendMessage(); });
+
+    async function sendMessage(){
+      const text = messageInput.value.trim();
+      if(!text) return;
+      appendUserMessage(text);
+      messageInput.value = '';
+
+      // Local commands / quick searches
+      const lower = text.toLowerCase();
+      if(/ver productos/.test(lower) || /mostrar productos/.test(lower)){
+        loadProductsCatalog();
+        showTab('products');
+        appendBotMessage('Te muestro nuestros productos.');
+        return;
+      }
+
+      // Local product search: if matches exist, show them directly in catalog
+      try{
+        const localMatches = searchProducts(text);
+        if(localMatches && localMatches.length > 0){
+          showSearchResults(text);
+          return;
+        }
+      } catch(e){ /* continue to remote fallback */ }
+
+      // Intentar enviar a backend (si existe), si falla usar respuestas locales
+      try {
+        const res = await fetch('http://localhost:3000/api/zyra', {
+          method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message:text})
+        , mode:'cors'});
+        if(res.ok){
+          const data = await res.json();
+          appendBotMessage(data.reply || 'Lo siento, no obtuve respuesta del servidor.');
+        } else {
+          appendBotMessage(localFallbackReply(text));
+        }
+      } catch(err){
+        appendBotMessage(localFallbackReply(text));
+      }
+    }
+
+    function appendUserMessage(text){
+      const chatArea = document.getElementById('chatArea');
+      const d = document.createElement('div');
+      d.className = 'message user-message';
+      d.textContent = text;
+      const t = document.createElement('div'); t.className='message-time'; t.textContent = getCurrentTime();
+      d.appendChild(t);
+      chatArea.appendChild(d);
+      chatArea.scrollTop = chatArea.scrollHeight;
+      // detener reconocimiento si está activo (evita capturar tu mensaje)
+      stopRecognition();
+    }
+
+    function appendBotMessage(text){
+      const chatArea = document.getElementById('chatArea');
+      const d = document.createElement('div');
+      d.className = 'message bot-message';
+      // soporta saltos de línea
+      d.innerHTML = text.replace(/\n/g,'<br>');
+      const t = document.createElement('div'); t.className='message-time'; t.textContent = getCurrentTime();
+      d.appendChild(t);
+      chatArea.appendChild(d);
+      chatArea.scrollTop = chatArea.scrollHeight;
+      // hablar si está activado
+      if(speakEnabled) speakText(stripHtml(text));
+    }
+
+    function localFallbackReply(text){
+      const t = text.toLowerCase();
+      if(t.includes('producto') || t.includes('productos') || t.includes('catalogo') || t.includes('disponibles')) {
+        showProductsQuickInChat();
+        return 'Te muestro algunos productos populares.';
+      }
+      if(t.includes('oferta') || t.includes('promocion') || t.includes('descuento')) {
+        return 'Actualmente tenemos descuentos en la sección de vestidos: hasta 20% en modelos seleccionados.';
+      }
+      if(t.includes('horario') || t.includes('hora') || t.includes('abren')) {
+        return 'Nuestro horario es Lunes a Sábado de 9:00 a 19:00.';
+      }
+      return '¡Buena pregunta! Puedo mostrarte productos, decirte si hay stock o informar sobre ofertas. ¿Qué te gustaría ver?';
+    }
+
+    function showProductsQuickInChat(){
+      appendBotMessage('Aquí tienes algunos de nuestros productos:');
+      // Create a collapsible product preview so text won't be cut off
+      const previewWrapper = document.createElement('div'); previewWrapper.className = 'chat-products-wrapper';
+      const grid = document.createElement('div'); grid.className='chat-products-grid';
+      // show a small sample
+      products.slice(0,6).forEach(p=>{
+        const card = document.createElement('div'); card.className='product-card';
+        card.style.background = '#fff';
+        card.innerHTML = `
+          <div class="product-image"><img src="${p.image}" alt="${p.name}" style="width:100%;height:120px;object-fit:cover" onerror="this.style.background='linear-gradient(135deg,#7E57C2,#B388FF)';this.src='';this.alt='Imagen'"></div>
+          <div class="product-info">
+            <div class="product-name">${p.name}</div>
+            <div class="product-price">$${p.price.toFixed(2)}</div>
+            <div style="font-size:12px;color:#666">Stock: ${p.stock}</div>
+          </div>
+        `;
+        card.addEventListener('click', ()=> showProductDetails(p));
+        grid.appendChild(card);
+      });
+      previewWrapper.appendChild(grid);
+      const toggle = document.createElement('button'); toggle.className='chat-products-toggle'; toggle.textContent='Ver más';
+      toggle.addEventListener('click', function(){
+        const expanded = previewWrapper.classList.toggle('expanded');
+        toggle.textContent = expanded ? 'Ver menos' : 'Ver más';
+        // smooth scroll into view when expanded
+        if(expanded) setTimeout(()=> previewWrapper.scrollIntoView({behavior:'smooth', block:'nearest'}), 60);
+      });
+
+      const wrapper = document.createElement('div'); wrapper.className='message bot-message';
+      wrapper.appendChild(previewWrapper);
+      wrapper.appendChild(toggle);
+      const timeDiv = document.createElement('div'); timeDiv.className='message-time'; timeDiv.textContent = getCurrentTime();
+      wrapper.appendChild(timeDiv);
+      document.getElementById('chatArea').appendChild(wrapper);
+      document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
+    }
+
+    function getCurrentTime(){
+      const now = new Date();
+      return now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+    }
+
+    
+    function initializeSurvey(){
+      let currentRating = 0;
+      const stars = document.querySelectorAll('.rating-star');
+      stars.forEach(s=>{
+        s.addEventListener('click', ()=>{
+          currentRating = parseInt(s.getAttribute('data-rating'));
+          stars.forEach(x=> x.classList.toggle('active', parseInt(x.getAttribute('data-rating')) <= currentRating));
+        });
+      });
+      document.getElementById('submitClientSurvey').addEventListener('click', ()=>{
+        if(currentRating === 0){ alert('Por favor selecciona una calificación'); return; }
+        alert('¡Gracias! Has calificado con ' + currentRating + ' estrellas.');
+        // reiniciar UI
+        stars.forEach(x=> x.classList.remove('active'));
+        currentRating = 0;
+      });
+    }
+
+    
+  const speakToggle = document.getElementById('speakToggle');
+  const micToggle = document.getElementById('micToggle');
+  let speakEnabled = true;
+  let recognition = null;
+  let recognizing = false;
+
+  // Inicializar estado botones (si existen)
+  if(speakToggle) speakToggle.textContent = '🔊 Hablar';
+  if(micToggle) micToggle.textContent = '🎙️ Escuchar';
+
+    // Speech Synthesis (lectura)
+    function speakText(text){
+      if(!speakEnabled) return;
+      if(!('speechSynthesis' in window)) return;
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'es-ES';
+      // elegir voz en español si está disponible
+      const voices = window.speechSynthesis.getVoices();
+      const v = voices.find(x=> x.lang && x.lang.startsWith('es')) || voices[0];
+      if(v) utter.voice = v;
+      window.speechSynthesis.cancel(); // cancelar si hay cola previa
+      window.speechSynthesis.speak(utter);
+    }
+
+    // Speech Recognition (reconocimiento)
+    function initRecognition(){
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if(!SpeechRecognition) {
+        if(micToggle) micToggle.title = 'Reconocimiento no soportado en este navegador';
+        return;
+      }
+      recognition = new SpeechRecognition();
+      recognition.lang = 'es-ES';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+  recognition.onstart = ()=>{ recognizing = true; if(micToggle) { micToggle.classList.add('active'); micToggle.textContent = '🛑 Detener'; micToggle.title='Detener reconocimiento'; } };
+  recognition.onend = ()=>{ recognizing = false; if(micToggle) { micToggle.classList.remove('active'); micToggle.textContent = '🎙️ Escuchar'; micToggle.title='Activar reconocimiento de voz'; } };
+  recognition.onerror = (e)=>{ console.warn('SpeechRecognition error', e); recognizing=false; if(micToggle) micToggle.textContent='🎙️ Escuchar'; };
+      recognition.onresult = (ev)=>{
+        const transcript = ev.results[0][0].transcript;
+        // insertar texto en input y enviar
+        if(messageInput) messageInput.value = transcript;
+        if(typeof sendMessage === 'function') sendMessage();
+      };
+    }
+
+    function startRecognition(){
+      if(!recognition) initRecognition();
+      if(!recognition) { alert('Tu navegador no soporta reconocimiento de voz (SpeechRecognition).'); return; }
+      try { recognition.start(); } catch(e){ console.warn(e); }
+    }
+    function stopRecognition(){ if(recognition && recognizing) recognition.stop(); }
+
+    // toggles (defensivo)
+    if(speakToggle) speakToggle.addEventListener('click', ()=>{ speakEnabled = !speakEnabled; speakToggle.textContent = speakEnabled ? '🔊 Hablar' : '🔈 Silencio'; });
+    if(micToggle) micToggle.addEventListener('click', ()=>{
+      if(!recognition) initRecognition();
+      if(!recognition) { alert('Reconocimiento de voz no disponible en este navegador.'); return; }
+      if(recognizing) stopRecognition(); else startRecognition();
+    });
+
+    
+    function stripHtml(html){
+      const tmp = document.createElement('div'); tmp.innerHTML = html; return tmp.textContent || tmp.innerText || '';
+    }
+
+    function initializeChat(){
+      // quick options
+      setTimeout(()=> showQuickOptions(["Ver productos", "¿Hay ofertas?", "Horario y contacto"]),1200);
+    }
+
+    function showQuickOptions(options){
+      const chatArea = document.getElementById('chatArea');
+      // limpiar anteriores
+      const existing = chatArea.querySelector('.quick-options'); if(existing) existing.remove();
+      const container = document.createElement('div'); container.className='quick-options';
+      options.forEach(opt=>{
+        const b = document.createElement('div'); b.className='quick-option'; b.textContent = opt;
+        b.addEventListener('click', ()=>{ messageInput.value = opt; sendMessage(); });
+        container.appendChild(b);
+      });
+      chatArea.appendChild(container);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Zyra - Confirmación de pedido</title>
+    <link rel="stylesheet" href="estilos.css?v=1">
+    <style>
+        .page-wrap{ max-width:1100px;margin:3rem auto;padding:1rem; }
+        .order-hero{ max-width:900px;margin:0 auto 1.6rem;padding:2rem;border-radius:10px;background:transparent; }
+        .order-summary-box{ max-width:900px;margin:1rem auto;padding:1.2rem;border-radius:12px;background:rgba(255,255,255,0.02);} 
+        .order-row{ display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem; }
+        .order-item{ display:flex;gap:12px;align-items:center;padding:12px;border-radius:10px;background:rgba(0,0,0,0.15); }
+        .order-item img{ width:76px;height:76px;object-fit:cover;border-radius:8px; }
+        .muted{ color:var(--muted); }
+        .success-btn{ background:#b71c1c;border-radius:8px;padding:8px 14px;color:var(--white);display:inline-block;text-decoration:none;margin-top:12px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-logo"><a href="pagina.html"><img src="img/log_Mesa de trabajo 1.png" alt="Zyra" height="40"></a></div>
+        <div style="flex:1"></div>
+        <div style="padding-right:16px;"></div>
+    </nav>
+
+    <main class="page-wrap">
+        <section class="order-hero">
+            <h2 id="orderTitle">Tu pedido ha sido enviado con éxito</h2>
+            <p id="orderMsg" class="muted">Gracias. Tu pedido se ha registrado correctamente.</p>
+        </section>
+
+        <section class="order-summary-box">
+            <div class="order-row">
+                <div><strong>Pedido:</strong> <span id="orderId">-</span></div>
+                <div><strong>Total:</strong> <span id="orderTotal">$0.00</span></div>
+            </div>
+
+            <div id="orderAddress" class="muted" style="margin-bottom:12px;"><strong>Dirección:</strong> <span id="orderAddrText">-</span></div>
+
+            <div id="orderItemsContainer">
+            </div>
+
+            <div id="orderPayment" class="muted" style="margin-top:12px;"></div>
+
+            <a href="pagina.html" class="success-btn">Volver a la tienda</a>
+        </section>
+    </main>
+
+    <script>
+        (function(){
+            function getParam(name){ const url = new URL(window.location.href); return url.searchParams.get(name); }
+            function qs(sel){ return document.querySelector(sel); }
+            const orderId = getParam('order');
+            const ordersKey = 'zyra_orders_v1';
+            const orders = JSON.parse(localStorage.getItem(ordersKey) || '[]');
+            // Intentamos encontrar la orden por id en el array guardado en localStorage
+            let order = orders.find(o=> o.id === orderId) || null;
+            // Si no existe (problemas con file:// o alcance de localStorage entre rutas),
+            // intentamos recuperar la última orden desde sessionStorage (seteada por cart.js)
+            if (!order){
+                try{
+                    const raw = sessionStorage.getItem('zyra_last_order');
+                    if (raw){
+                        const tmp = JSON.parse(raw);
+                        if (tmp && tmp.id === orderId) {
+                            order = tmp;
+                            // opcional: agregarla a 'zyra_orders_v1' para persistencia
+                            try{
+                                const arr = JSON.parse(localStorage.getItem(ordersKey) || '[]');
+                                // evitar duplicados
+                                if (!arr.find(x=> x.id === tmp.id)) { arr.push(tmp); localStorage.setItem(ordersKey, JSON.stringify(arr)); }
+                            }catch(e){}
+                        }
+                    }
+                }catch(e){ /* ignore parse errors */ }
+            }
+
+            // También intentamos la copia temporal en localStorage como último recurso
+            if (!order){
+                try{
+                    const raw2 = localStorage.getItem('zyra_orders_last_tmp');
+                    if (raw2){
+                        const tmp2 = JSON.parse(raw2);
+                        if (tmp2 && tmp2.id === orderId) order = tmp2;
+                    }
+                }catch(e){}
+            }
+
+            if (!order){ qs('#orderTitle').textContent = 'Pedido no encontrado'; qs('#orderMsg').textContent = 'No se encontró la orden solicitada.'; return; }
+
+            qs('#orderId').textContent = order.id;
+            qs('#orderTotal').textContent = '$' + (order.total||0).toFixed(2);
+            qs('#orderMsg').textContent = `Gracias, ${order.customer.name || order.customer.email}. Tu pedido ${order.id} se ha registrado correctamente.`;
+            qs('#orderAddrText').textContent = order.customer.address || '';
+
+            const container = qs('#orderItemsContainer');
+            container.innerHTML = '';
+            (order.items || []).forEach(it=>{
+                const el = document.createElement('div'); el.className = 'order-item';
+                const price = (function(p){ const cleaned = String(p).replace(/[^0-9.,-]/g,'').replace(',','.'); const n = parseFloat(cleaned); return isNaN(n)?0:n; })(it.price);
+                el.innerHTML = `<img src="${it.img||'img/placeholder.png'}"><div style="flex:1;"><strong>${it.title||''}</strong><div class='muted'>${it.price||''} × ${it.qty||1}</div></div><div style="min-width:80px;text-align:right">$${(price * (it.qty||1)).toFixed(2)}</div>`;
+                container.appendChild(el);
+            });
+
+            if (order.payment){ qs('#orderPayment').innerHTML = `<strong>Método:</strong> ${order.payment.method} ${order.payment.masked? '('+order.payment.masked +')' : ''}`; }
+        })();
+    </script>
+    </body>
+    </html>

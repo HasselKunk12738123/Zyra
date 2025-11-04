@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Zyra - Registro / Login</title>
+    <link rel="stylesheet" href="estilos.css?v=1">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-logo">
+            <a href="pagina.html"><img src="img/log_Mesa de trabajo 1.png" alt="Zyra Logo" height="40"></a>
+        </div>
+        <div class="navbar-search">
+            <input type="text" placeholder="¿Buscas algún producto...?">
+            <button>🔍</button>
+        </div>
+        
+        <div style="flex:1"></div>
+    </nav>
+
+    <main style="padding:3rem 1rem;">
+        <div class="auth-wrapper" style="max-width:960px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:center;">
+            <div>
+                <img src="img/logo_Mesa de trabajo 1.png" alt="Zyra" style="width:100%;border-radius:8px;object-fit:cover;height:360px;">
+            </div>
+            <div style="background:transparent;padding:1.2rem;">
+                <div class="auth-card" style="background: rgba(17,18,20,0.02); padding:1.6rem; border-radius:10px;">
+                    <h2 id="authTitle">Iniciar sesión</h2>
+
+                    <div style="margin-bottom:12px;display:flex;gap:8px;">
+                        <button id="tabLogin" class="zyra-btn">Iniciar sesión</button>
+                        <button id="tabRegister" class="zyra-btn ghost">Registrarse</button>
+                    </div>
+
+                    <div id="authForms">
+                        <!-- Login form -->
+                        <form id="loginForm" style="display:block;">
+                            <label>Email</label>
+                            <input id="loginEmail" type="email" required style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid rgba(0,0,0,0.08);">
+
+                            <label>Contraseña</label>
+                            <input id="loginPass" type="password" required style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid rgba(0,0,0,0.08);">
+
+                            <div style="margin-top:0.8rem;display:flex;gap:8px;align-items:center;">
+                                <label style="display:flex;align-items:center;gap:6px;"><input id="rememberMe" type="checkbox"> Recuérdame</label>
+                                <button type="submit" class="zyra-btn">Entrar</button>
+                            </div>
+                            <div id="loginMsg" style="margin-top:10px;color:var(--muted);"></div>
+                        </form>
+
+                        <!-- Register form -->
+                        <form id="registerForm" style="display:none;">
+                            <label>Nombre</label>
+                            <input id="regName" type="text" required style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid rgba(0,0,0,0.08);">
+
+                            <label>Email</label>
+                            <input id="regEmail" type="email" required style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid rgba(0,0,0,0.08);">
+
+                            <label>Contraseña</label>
+                            <input id="regPass" type="password" required style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid rgba(0,0,0,0.08);">
+
+                            <label>Confirmar contraseña</label>
+                            <input id="regPass2" type="password" required style="width:100%;padding:10px;margin:6px 0;border-radius:6px;border:1px solid rgba(0,0,0,0.08);">
+
+                            <div style="margin-top:0.8rem;display:flex;gap:8px;align-items:center;">
+                                <button type="submit" class="zyra-btn">Crear cuenta</button>
+                            </div>
+                            <div id="regMsg" style="margin-top:10px;color:var(--muted);"></div>
+                        </form>
+                    </div>
+
+                    <hr style="margin:1rem 0;border-color: rgba(255,255,255,0.04);">
+                    <div style="color:var(--muted);font-size:0.95rem;">Al registrarte aceptas nuestras políticas. (Simulación local - sin envío de contraseñas a servidores)</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        &copy; 2025 Zyra. Todos los derechos reservados.
+    </footer>
+
+<script>
+(function(){
+    const USERS_KEY = 'zyra_users_v1';
+    const SESSION_KEY = 'zyra_user';
+
+    function qs(id){ return document.getElementById(id); }
+
+    function loadUsers(){ try{ return JSON.parse(localStorage.getItem(USERS_KEY) || '[]'); }catch(e){return [];} }
+    function saveUsers(users){ localStorage.setItem(USERS_KEY, JSON.stringify(users)); }
+
+    function setSession(user, remember){
+        if (remember) localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+        else sessionStorage.setItem(SESSION_KEY, JSON.stringify(user));
+    }
+
+    function getSession(){ try{ return JSON.parse(localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY) || 'null'); }catch(e){return null;} }
+    function clearSession(){ localStorage.removeItem(SESSION_KEY); sessionStorage.removeItem(SESSION_KEY); }
+
+    // Tabs / forms
+    const tabLogin = qs('tabLogin');
+    const tabRegister = qs('tabRegister');
+    const loginForm = qs('loginForm');
+    const registerForm = qs('registerForm');
+    const authTitle = qs('authTitle');
+    const loginMsg = qs('loginMsg');
+    const regMsg = qs('regMsg');
+
+    // Tab switching
+    function showLogin(){ loginForm.style.display='block'; registerForm.style.display='none'; authTitle.textContent='Iniciar sesión'; tabLogin.classList.remove('ghost'); tabRegister.classList.add('ghost'); }
+    function showRegister(){ loginForm.style.display='none'; registerForm.style.display='block'; authTitle.textContent='Crear cuenta'; tabLogin.classList.add('ghost'); tabRegister.classList.remove('ghost'); }
+    tabLogin.addEventListener('click', function(e){ e.preventDefault(); showLogin(); });
+    tabRegister.addEventListener('click', function(e){ e.preventDefault(); showRegister(); });
+
+    // Seed two demo users (client and worker) if they don't exist
+    (function seedDemoUsers(){
+        const users = loadUsers();
+        const clientEmail = 'cliente@ejemplo.com';
+        const workerEmail = 'trabajador@ejemplo.com';
+        let changed = false;
+        if (!users.find(u=> u.email === clientEmail)){
+            users.push({ id: 'u_client', name: 'Cliente Demo', email: clientEmail, password: 'cliente123', role: 'client' });
+            changed = true;
+        }
+        if (!users.find(u=> u.email === workerEmail)){
+            users.push({ id: 'u_worker', name: 'Trabajador Demo', email: workerEmail, password: 'trabajador123', role: 'worker' });
+            changed = true;
+        }
+        if (changed) saveUsers(users);
+    })();
+
+    // Login
+    loginForm.addEventListener('submit', function(e){
+        e.preventDefault();
+        loginMsg.textContent='';
+        const email = qs('loginEmail').value.trim().toLowerCase();
+        const pass = qs('loginPass').value;
+        const remember = qs('rememberMe').checked;
+        const users = loadUsers();
+        const user = users.find(u=> u.email === email && u.password === pass);
+        if (!user){ loginMsg.textContent='Credenciales incorrectas.'; return; }
+        // set session including role
+        setSession({id:user.id,name:user.name,email:user.email,role:user.role}, remember);
+        loginMsg.style.color='lightgreen';
+        if (user.role === 'worker'){
+            // show differentiator modal for worker before redirect
+            showWorkerModal(function(){ window.location.href = 'pagina.html'; });
+        } else {
+            loginMsg.textContent='Inicio correcto. Redirigiendo...';
+            setTimeout(()=> window.location.href = 'pagina.html', 700);
+        }
+    });
+
+    // Register
+    registerForm.addEventListener('submit', function(e){
+        e.preventDefault();
+        regMsg.textContent='';
+        const name = qs('regName').value.trim();
+        const email = qs('regEmail').value.trim().toLowerCase();
+        const pass = qs('regPass').value;
+        const pass2 = qs('regPass2').value;
+
+        if (!name){ regMsg.textContent='Por favor ingresa tu nombre.'; return; }
+        if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ regMsg.textContent='Email inválido.'; return; }
+        if (!pass || pass.length < 6){ regMsg.textContent='La contraseña debe tener al menos 6 caracteres.'; return; }
+        if (pass !== pass2){ regMsg.textContent='Las contraseñas no coinciden.'; return; }
+
+        const users = loadUsers();
+        if (users.find(u=> u.email === email)){
+            regMsg.textContent='Ya existe una cuenta con ese email.'; return;
+        }
+
+        const newUser = { id: 'u_'+Date.now(), name: name, email: email, password: pass, role: 'client' };
+        users.push(newUser);
+        saveUsers(users);
+
+        // Auto-login after register (persist session to localStorage)
+        setSession({id:newUser.id,name:newUser.name,email:newUser.email,role:newUser.role}, true);
+        regMsg.style.color='lightgreen';
+        regMsg.textContent='Cuenta creada. Redirigiendo...';
+        setTimeout(()=> window.location.href = 'pagina.html', 800);
+    });
+
+    // show a small modal distinguishing worker users
+    function showWorkerModal(onAccept){
+        if (document.getElementById('workerModalOverlay')) return;
+        const overlay = document.createElement('div');
+        overlay.id = 'workerModalOverlay';
+        overlay.className = 'zyra-modal-overlay active confirmation';
+
+        const modal = document.createElement('div');
+        modal.className = 'zyra-modal confirmation';
+        modal.id = 'workerModal';
+        modal.innerHTML = `
+            <div class="modal-body">
+                <h3>Modo trabajador</h3>
+                <p style="color:var(--muted)">Has iniciado sesión como trabajador. Tendrás acceso especial para tareas internas.</p>
+                <div class="modal-actions">
+                    <button id="workerAccept" class="zyra-btn">Continuar</button>
+                    <button id="workerCancel" class="zyra-btn ghost">Cancelar</button>
+                </div>
+            </div>
+        `;
+        overlay.addEventListener('click', remove);
+        modal.addEventListener('click', function(e){ e.stopPropagation(); });
+        document.body.appendChild(overlay);
+        document.body.appendChild(modal);
+
+        const btnA = document.getElementById('workerAccept');
+        const btnC = document.getElementById('workerCancel');
+        if (btnA) btnA.focus();
+        function remove(){ const o=document.getElementById('workerModalOverlay'); const m=document.getElementById('workerModal'); if(o) o.remove(); if(m) m.remove(); }
+        if (btnA) btnA.addEventListener('click', function(){ remove(); if (onAccept) onAccept(); });
+        if (btnC) btnC.addEventListener('click', function(){ remove(); });
+        window.addEventListener('keydown', function esc(e){ if (e.key==='Escape'){ remove(); window.removeEventListener('keydown', esc); } });
+    }
+
+    // If already logged in, show a message and logout option
+    function renderSession(){
+        const s = getSession();
+        if (!s) return;
+        // replace auth card with welcome
+        const card = document.querySelector('.auth-card');
+        if (!card) return;
+        card.innerHTML = `<h2>Bienvenido, ${s.name || s.email}!</h2><p style="color:var(--muted)">Estás conectado.</p><div style="margin-top:1rem;"><button id="logoutBtn" class="zyra-btn ghost">Cerrar sesión</button> <a href="pagina.html" class="zyra-btn">Volver a la tienda</a></div>`;
+        const btn = document.getElementById('logoutBtn');
+        if (btn) btn.addEventListener('click', function(){ clearSession(); window.location.reload(); });
+    }
+
+    renderSession();
+})();
+</script>
+
+<script src="modal.js"></script>
+<script src="cart.js"></script>
+</body>
+</html>
